@@ -1,0 +1,6 @@
+Flask
+gunicorn
+opencv-python-headless
+sqlalchemy
+psycopg2
+requests

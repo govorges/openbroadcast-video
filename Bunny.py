@@ -41,3 +41,13 @@ class BunnyAPI:
         request = requests.post(f"http://{self.API_Endpoint_URL}/cache/purge", headers=headers)
 
         return request.status_code
+    
+    def upload_CreateSignature(self, videoID: str):
+        headers = {
+            "videoID": videoID
+        }
+        request = requests.post(f"http://{self.API_Endpoint_URL}/upload/create-signature", headers=headers)
+
+        signatureData = request.json()
+        return signatureData
+        

@@ -63,12 +63,12 @@ class VideoHandler:
 
         return outputJson
 
-    def GrabVideoDuration(self, filename):
+    def internal__GrabVideoDuration(self, filename):
         video = cv2.VideoCapture(filename)
         duration = video.get(cv2.CAP_PROP_POS_MSEC)
         return duration
 
-    def GenerateVideoID(self):
+    def internal__GenerateVideoID(self):
         def gen():
             seq = "AaBbCcDdEeFfGgHhIiJjKkLlMmNnOoPpQqRrSsTtUuVvWwXxYyZz1234567890"
             _id = ""
@@ -80,6 +80,28 @@ class VideoHandler:
         while self.internal_videoIDAlreadyExists(id):
             id = gen()
         return id
+    
+    def createUploadObject(self, id: str, video_metadata: dict):
+        tusSignature = self.bunny.upload_CreateSignature(id)
+        requiredKeys = ["signature", "signature_expiration_time", "library_id"]
+        
+        for key in requiredKeys:
+            if tusSignature.get(key) is None or tusSignature.get(key) == "":
+                return None
+        
+        sql_query = f"""
+        INSERT INTO public."Uploads" (video_id, video_metadata, signature_metadata)
+        VALUES (%s, %s, %s);
+        """
+
+        videoJson = json.dumps(video_metadata)
+        signatureJson = json.dumps(tusSignature)
+
+        self.postgres_cursor.execute(sql_query, (id, videoJson, signatureJson))
+        self.postgres_connection.commit()
+
+        return { "signature": tusSignature, "metadata": video_metadata }
+    
 
     def IngestVideo(self, id: str, video_metadata: dict):
         try:

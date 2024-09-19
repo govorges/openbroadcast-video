@@ -23,12 +23,12 @@ def BuildJSONResponseText(type: str, message: str, route: str, method: str):
 def uploads__Create():
     id = request.headers.get("id")
     if id is None or id == "":
-        response_text = BuildJSONResponseText("WARNING", "The header \"id\" is not set or was set incorrectly", route="/videos/ingest", method="POST")
+        response_text = BuildJSONResponseText("WARNING", "The header \"id\" is not set or was set incorrectly", route="/uploads/create", method="POST")
         return make_response(response_text, 400)
     
     metadata = request.json
     if metadata is None or metadata == "":
-        response_text = BuildJSONResponseText("WARNING", "The header \"metadata\" is not set or was set incorrectly", route="/videos/ingest", method="POST")
+        response_text = BuildJSONResponseText("WARNING", "The header \"metadata\" is not set or was set incorrectly", route="/uploads/create", method="POST")
         return make_response(response_text, 400)
 
     uploadData = api_VideoHandle.createUploadObject(id, metadata)

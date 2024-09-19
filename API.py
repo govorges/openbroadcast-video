@@ -19,6 +19,38 @@ def BuildJSONResponseText(type: str, message: str, route: str, method: str):
     }
     return json.dumps(data, indent=4)
 
+@api.route("/uploads/create", methods=["POST"])
+def uploads__Create():
+    id = request.headers.get("id")
+    if id is None or id == "":
+        response_text = BuildJSONResponseText("WARNING", "The header \"id\" is not set or was set incorrectly", route="/uploads/create", method="POST")
+        return make_response(response_text, 400)
+    
+    metadata = request.json
+    if metadata is None or metadata == "":
+        response_text = BuildJSONResponseText("WARNING", "The header \"metadata\" is not set or was set incorrectly", route="/uploads/create", method="POST")
+        return make_response(response_text, 400)
+
+    uploadData = api_VideoHandle.createUploadObject(id, metadata)
+    return jsonify(uploadData)
+
+@api.route("/uploads/capture", methods=["POST"])
+def uploads__Capture():
+    id = request.headers.get("id")
+    if id is None or id == "":
+        response_text = BuildJSONResponseText("WARNING", "The header \"id\" is not set or was set incorrectly", route="/uploads/capture", method="POST")
+        return make_response(response_text, 400)
+
+    signatureHash = request.headers.get("signatureHash")
+    if signatureHash is None or signatureHash == "":
+        response_text = BuildJSONResponseText("WARNING", "The header \"signatureHash\" is not set or was set incorrectly", route="/uploads/capture", method="POST")
+        return make_response(response_text, 400)
+    
+    success = api_VideoHandle.captureUploadObject(id=id, signatureHash=signatureHash)
+    if not success:
+        return make_response("Upload not captured. Video not registered.", 400)
+    return make_response("Upload captured. Video registered.", 200)
+
 @api.route("/videos/ingest", methods=["POST"])
 def videos__Ingest():
     id = request.headers.get("id")
@@ -56,6 +88,6 @@ def videos__Ingest():
 @api.route("/videos/generate_id", methods=["GET"])
 def videos__GenerateID():
     response_data = {
-        "id": api_VideoHandle.GenerateVideoID()
+        "id": api_VideoHandle.internal__GenerateVideoID()
     }
     return jsonify(response_data)

@@ -80,6 +80,12 @@ class VideoHandler:
         while self.internal_videoIDAlreadyExists(id):
             id = gen()
         return id
+    def internal_IsValidVideoID(self, id):
+        seq = "AaBbCcDdEeFfGgHhIiJjKkLlMmNnOoPpQqRrSsTtUuVvWwXxYyZz1234567890"
+        for char in id:
+            if char not in seq:
+                return False
+        return True
     
     def internal__RemoveUploadObject(self, video_id):
         sql_query = f"""
@@ -99,6 +105,9 @@ class VideoHandler:
         
     
     def createUploadObject(self, id: str, video_metadata: dict):
+        if not self.internal_IsValidVideoID(id):
+            return None
+        
         tusSignature = self.bunny.upload_CreateSignature(id)
         requiredKeys = ["signature", "signature_expiration_time", "library_id"]
         
@@ -120,6 +129,9 @@ class VideoHandler:
         return { "signature": tusSignature, "metadata": video_metadata }
     
     def captureUploadObject(self, id: str, signatureHash: str):
+        if not self.internal_IsValidVideoID(id):
+            return False
+        
         uploadData = self.internal__RetrieveUploadObject(video_id=id)
         
         signature_metadata = uploadData[2]

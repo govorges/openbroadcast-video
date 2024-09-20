@@ -41,9 +41,9 @@ def uploads__Capture():
         response_text = BuildJSONResponseText("WARNING", "The header \"id\" is not set or was set incorrectly", route="/uploads/capture", method="POST")
         return make_response(response_text, 400)
 
-    signatureHash = request.headers.get("signatureHash")
+    signatureHash = request.headers.get("signature")
     if signatureHash is None or signatureHash == "":
-        response_text = BuildJSONResponseText("WARNING", "The header \"signatureHash\" is not set or was set incorrectly", route="/uploads/capture", method="POST")
+        response_text = BuildJSONResponseText("WARNING", "The header \"signature\" is not set or was set incorrectly", route="/uploads/capture", method="POST")
         return make_response(response_text, 400)
     
     success = api_VideoHandle.captureUploadObject(id=id, signatureHash=signatureHash)

@@ -46,7 +46,7 @@ class BunnyAPI:
         headers = {
             "videoID": videoID
         }
-        request = requests.post(f"http://{self.API_Endpoint_URL}/upload/create-signature", headers=headers)
+        request = requests.get(f"http://{self.API_Endpoint_URL}/upload/create-signature", headers=headers)
 
         signatureData = request.json()
         return signatureData

@@ -90,14 +90,14 @@ class VideoHandler:
     
     def internal__RemoveUploadObject(self, video_id):
         sql_query = f"""
-        DELETE FROM public."Uploads" WHERE video_id = '%s'
+        DELETE FROM public."Uploads" WHERE video_id = %s
         """
         self.postgres_cursor.execute(sql_query, (video_id))
         self.postgres_connection.commit()
 
     def internal__RetrieveUploadObject(self, video_id):
         sql_query = f"""
-        SELECT video_id, video_metadata, signature_metadata, date_creation FROM public."Uploads" WHERE video_id = '%s'
+        SELECT video_id, video_metadata, signature_metadata, date_creation FROM public."Uploads" WHERE video_id = %s
         """
         self.postgres_cursor.execute(sql_query, (video_id))
         uploadData = self.postgres_cursor.fetchone()

@@ -120,6 +120,7 @@ class VideoHandler:
             "resolution_h": None,
             "fps": None,
             "guid": video_metadata['guid'],
+            "library_id": environ["BUNNY_STREAMLIBRARY_ID"],
             "id": id,
             "thumbnail_url": f"{PULL_ZONE_ROOT}/thumbnails/{id}.png",
             "stream_url": f"{LIBRARY_CDN_HOSTNAME}/{video_metadata['guid']}/playlist.m3u8",

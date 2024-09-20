@@ -10,6 +10,7 @@ import psycopg2
 
 HOME_DIR = path.dirname(path.realpath(__file__))
 PULL_ZONE_ROOT = environ["BUNNY_PULL_ZONE_ROOT"]
+LIBRARY_CDN_HOSTNAME = environ["LIBRARY_CDN_HOSTNAME"]
 
 class VideoHandler:
     def __init__(self):
@@ -108,7 +109,23 @@ class VideoHandler:
         if not self.internal_IsValidVideoID(id):
             return None
         
-        tusSignature = self.bunny.upload_CreateSignature(id)
+        videoObj = self.bunny.stream_CreateVideo(videoTitle=video_metadata.get("title"))
+        video_metadata["guid"] = videoObj.get("guid")
+
+        metadata = {
+            "title": video_metadata.get("title"),
+            "description": video_metadata.get("description"),
+            "duration": None,
+            "resolution_w": None,
+            "resolution_h": None,
+            "fps": None,
+            "guid": video_metadata['guid'],
+            "id": id,
+            "thumbnail_url": f"{PULL_ZONE_ROOT}/thumbnails/{id}.png",
+            "stream_url": f"{LIBRARY_CDN_HOSTNAME}/{video_metadata['guid']}/playlist.m3u8",
+        }
+
+        tusSignature = self.bunny.upload_CreateSignature(video_metadata['guid'])
         requiredKeys = ["signature", "signature_expiration_time", "library_id"]
         
         for key in requiredKeys:
@@ -120,13 +137,13 @@ class VideoHandler:
         VALUES (%s, %s, %s);
         """
 
-        videoJson = json.dumps(video_metadata)
+        videoJson = json.dumps(metadata)
         signatureJson = json.dumps(tusSignature)
 
         self.postgres_cursor.execute(sql_query, (id, videoJson, signatureJson))
         self.postgres_connection.commit()
 
-        return { "signature": tusSignature, "metadata": video_metadata }
+        return { "signature": tusSignature, "metadata": metadata }
     
     def captureUploadObject(self, id: str, signatureHash: str):
         if not self.internal_IsValidVideoID(id):
@@ -152,7 +169,6 @@ class VideoHandler:
         """
         self.postgres_cursor.execute(sql_query, (id, videoJson))
         self.postgres_connection.commit()
-
 
     def IngestVideo(self, id: str, video_metadata: dict):
         try:

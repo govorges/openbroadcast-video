@@ -49,8 +49,15 @@ class BunnyAPI:
         headers = {
             "videoID": videoID
         }
-        request = requests.get(f"http://{self.API_Endpoint_URL}/upload/create-signature", headers=headers)
+        request = requests.get(f"http://{self.API_Endpoint_URL}/stream/create-signature", headers=headers)
 
         signatureData = request.json()
         return signatureData
         
+    def stream_CreateVideo(self, videoTitle: str):
+        headers = {
+            "title": videoTitle
+        }
+        request = requests.get(f"http://{self.API_Endpoint_URL}/stream/create-video", headers=headers)
+
+        return request.json()

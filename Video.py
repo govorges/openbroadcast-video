@@ -84,6 +84,14 @@ class VideoHandler:
             return None
         
         videoObj = self.bunny.stream_CreateVideo(videoTitle=video_metadata.get("title"))
+        self.bunny.stream_UpdateVideo(videoObj.get("guid"), payload = {
+            "metaTags": [
+                {
+                    "property": "description",
+                    "value": video_metadata.get("description", "A video uploaded to OpenBroadcast.")
+                }
+            ]
+        })
         video_metadata["guid"] = videoObj.get("guid")
 
         metadata = {

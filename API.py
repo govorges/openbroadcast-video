@@ -34,6 +34,11 @@ def uploads__Create():
         return make_response(response_text, 400)
 
     uploadData = api_VideoHandle.createUploadObject(id, metadata)
+
+    # Some data is not for external use.
+    uploadData.pop('stream_url')
+    uploadData.pop('library_id')
+
     return jsonify(uploadData)
 
 @api.route("/uploads/capture", methods=["POST"])

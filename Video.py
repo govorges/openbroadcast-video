@@ -97,6 +97,7 @@ class VideoHandler:
         metadata = {
             "title": video_metadata.get("title"),
             "description": video_metadata.get("description"),
+            "category": video_metadata.get("category"),
             "duration": None,
             "resolution_w": None,
             "resolution_h": None,

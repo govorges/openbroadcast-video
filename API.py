@@ -2,6 +2,8 @@ from flask import Flask, request, make_response, jsonify
 from os import path
 import json
 
+import cv2
+
 from Video import VideoHandler
 
 HOME_DIR = path.dirname(path.realpath(__file__))
@@ -63,6 +65,17 @@ def videos__ThumbnailUpload():
         response_text = BuildJSONResponseText("WARNING", "The header \"local-file-path\" is not set or was set incorrectly", route="/videos/thumbnail-upload", method="POST")
         return make_response(response_text, 400)
     
+    target_image_resolution = request.headers.get("target_image_resolution") # 100x200 | WIDTHxHEIGHT
+    if target_image_resolution is None or target_image_resolution == "":
+        target_image_resolution = (800, 450)
+    else:
+        target_image_resolution = (int(target_image_resolution.lower().split('x')[0]), int(target_image_resolution.lower().split('x')[1]))
+
+    # Resizing the thumbnail to the required size for our channel by default, but can be optionally specified
+    thumbnail_image = cv2.imread(local_file_path)
+    resized = cv2.resize(thumbnail_image, target_image_resolution)
+    cv2.imwrite(local_file_path, resized)
+
     status_code = api_VideoHandle.bunny.file_QueueUpload(target_file_path=target_file_path, local_file_path=local_file_path)
 
     if status_code == 200:

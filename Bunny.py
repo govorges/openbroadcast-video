@@ -65,8 +65,7 @@ class BunnyAPI:
     def stream_UpdateVideo(self, guid: str, payload: dict):
         headers = {
             "guid": guid,
-            "payload": payload
         }
-        request = requests.post(f"http://{self.API_Endpoint_URL}/stream/update-video", headers=headers)
+        request = requests.post(f"http://{self.API_Endpoint_URL}/stream/update-video", headers=headers, json=payload)
 
         return request.status_code

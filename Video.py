@@ -1,7 +1,10 @@
-import cv2
 import random
 import datetime
 from os import path, environ
+
+from threading import Thread
+import time
+
 import json
 
 from Bunny import BunnyAPI
@@ -25,6 +28,34 @@ class VideoHandler:
         self.postgres_cursor = self.postgres_connection.cursor()
 
         self.UPLOAD_FOLDER = path.join(HOME_DIR, "uploads")
+        
+        self.pollerThread = Thread(target=self.internal__pollUploadProgress, args=(), daemon=True).start()
+
+    def internal__pollUploadProgress(self):
+        while True: 
+            time.sleep(10)
+
+            sql_query = '''SELECT * FROM public."Uploads" ORDER BY date_creation ASC''' # earliest first
+            self.postgres_cursor.execute(sql_query)
+
+            uploads = self.postgres_cursor.fetchall()
+            for upload in uploads: # tuples --- video_id | video_metadata | signature_metadata | date_creation
+                video_id = upload[0]
+                video_metadata = json.loads(upload[1])
+                signature_metadata = json.loads(upload[2])
+
+                video = self.bunny.stream_RetrieveVideo(video_metadata.get("guid"))
+                statusCode = video.get("status")
+
+                if statusCode in [0, 1, 2, 3] or statusCode in ["0", "1", "2", "3"]:
+                    if signature_metadata.get("signature_expiration_time") < datetime.datetime.now().timestamp():
+                        self.internal__RemoveUploadObject(video_id=video_id)
+                if statusCode == 4 or statusCode == "4":
+                    self.internal__RemoveUploadObject(video_id=video_id)
+                    self.internal__createVideoObject(id=video_id, video_metadata=video_metadata)
+                else:
+                    self.internal__RemoveUploadObject(video_id=video_id)
+        
 
     def internal__videoIDAlreadyExists(self, id: str):
         fileList = self.bunny.file_List("videos/")
@@ -147,18 +178,3 @@ class VideoHandler:
         self.postgres_connection.commit()
 
         return { "signature": tusSignature, "metadata": metadata }
-    
-    def captureUploadObject(self, id: str, signatureHash: str):
-        if not self.internal_IsValidVideoID(id):
-            return False
-        
-        uploadData = self.internal__RetrieveUploadObject(video_id=id)
-        
-        signature_metadata = uploadData[2]
-        if signature_metadata.get("signature") != signatureHash:
-            return False
-        
-        self.internal__RemoveUploadObject(video_id=id)
-        self.internal__createVideoObject(id=id, video_metadata=uploadData[1])
-
-        return True

@@ -70,7 +70,26 @@ class VideoHandler:
         return uploadData
     
     def internal__createVideoObject(self, id: str, video_metadata: dict):
+        video_guid = video_metadata.get("guid")
+        fileData = self.bunny.stream_RetrieveVideo(video_guid)
+
+        metadata = video_metadata
+        metadata["feedTags"] = {
+            "releasedate": datetime.datetime.now().strftime("%B %d %Y"),
+            "title": video_metadata.get("title"),
+            "description": video_metadata.get("description"),
+            "url": video_metadata.get("stream_url"),
+            "poster": video_metadata.get("thumbnail_url"),
+            "streamformat": "hls",
+            
+            "length": fileData.get("length"),
+            "width": fileData.get("width"),
+            "height": fileData.get("height"),
+            "framerate": fileData.get("framerate")
+        }
+
         videoJson = json.dumps(video_metadata)
+
         sql_query = f"""
         INSERT INTO public."Videos" (video_id, video_metadata)
         VALUES (%s, %s);

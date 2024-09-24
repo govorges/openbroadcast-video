@@ -36,8 +36,8 @@ def uploads__Create():
     uploadData = api_VideoHandle.createUploadObject(id, metadata)
 
     # Some data is not for external use.
-    uploadData.pop('stream_url')
-    uploadData.pop('library_id')
+    uploadData['metadata'].pop('stream_url')
+    uploadData['metadata'].pop('library_id')
 
     return jsonify(uploadData)
 

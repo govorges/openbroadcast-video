@@ -50,7 +50,7 @@ class VideoHandler:
                 if statusCode in [0, 1, 2, 3] or statusCode in ["0", "1", "2", "3"]:
                     if signature_metadata.get("signature_expiration_time") < datetime.datetime.now().timestamp():
                         self.internal__RemoveUploadObject(video_id=video_id)
-                if statusCode == 4 or statusCode == "4":
+                elif statusCode == 4 or statusCode == "4":
                     self.internal__RemoveUploadObject(video_id=video_id)
                     self.internal__createVideoObject(id=video_id, video_metadata=video_metadata)
                 else:

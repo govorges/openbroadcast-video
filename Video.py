@@ -41,8 +41,8 @@ class VideoHandler:
             uploads = self.postgres_cursor.fetchall()
             for upload in uploads: # tuples --- video_id | video_metadata | signature_metadata | date_creation
                 video_id = upload[0]
-                video_metadata = json.loads(upload[1])
-                signature_metadata = json.loads(upload[2])
+                video_metadata = upload[1]
+                signature_metadata = upload[2]
 
                 video = self.bunny.stream_RetrieveVideo(video_metadata.get("guid"))
                 statusCode = video.get("status")

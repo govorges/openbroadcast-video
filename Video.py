@@ -29,7 +29,8 @@ class VideoHandler:
 
         self.UPLOAD_FOLDER = path.join(HOME_DIR, "uploads")
         
-        self.pollerThread = Thread(target=self.internal__pollUploadProgress, args=(), daemon=True).start()
+        self.pollerThread = Thread(target=self.internal__pollUploadProgress, args=(), daemon=True)
+        self.pollerThread.start()
 
     def internal__pollUploadProgress(self):
         while True: 

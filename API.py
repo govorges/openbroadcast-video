@@ -5,12 +5,14 @@ import json
 import cv2
 
 from Video import VideoHandler
+from Bunny import BunnyAPI
 
 HOME_DIR = path.dirname(path.realpath(__file__))
 UPLOAD_DIR = path.join(HOME_DIR, "uploads")
 
 api = Flask(__name__)
 api_VideoHandle = VideoHandler()
+api_Bunny = BunnyAPI()
 
 def BuildJSONResponseText(type: str, message: str, route: str, method: str):
     data = {
@@ -41,22 +43,15 @@ def uploads__Create():
 
     return jsonify(uploadData)
 
-@api.route("/uploads/capture", methods=["POST"])
-def uploads__Capture():
-    id = request.headers.get("id")
-    if id is None or id == "":
+@api.route("/videos/retrieve", methods=["GET"])
+def videos__Retrieve():
+    guid = request.headers.get("guid")
+    if guid is None or guid == "":
         response_text = BuildJSONResponseText("WARNING", "The header \"id\" is not set or was set incorrectly", route="/uploads/capture", method="POST")
         return make_response(response_text, 400)
-
-    signatureHash = request.headers.get("signature")
-    if signatureHash is None or signatureHash == "":
-        response_text = BuildJSONResponseText("WARNING", "The header \"signature\" is not set or was set incorrectly", route="/uploads/capture", method="POST")
-        return make_response(response_text, 400)
     
-    success = api_VideoHandle.captureUploadObject(id=id, signatureHash=signatureHash)
-    if not success:
-        return make_response("Upload not captured. Video not registered.", 400)
-    return make_response("Upload captured. Video registered.", 200)
+    video = api_Bunny.stream_RetrieveVideo(guid=guid)
+    return jsonify(video) # !!! Powerful !!!
 
 @api.route("/videos/thumbnail-upload", methods=["POST"])
 def videos__ThumbnailUpload():

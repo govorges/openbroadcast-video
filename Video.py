@@ -37,7 +37,12 @@ class VideoHandler:
             time.sleep(10)
 
             sql_query = '''SELECT * FROM public."Uploads" ORDER BY date_creation ASC''' # earliest first
-            self.postgres_cursor.execute(sql_query)
+            try:
+                self.postgres_cursor.execute(sql_query)
+            except psycopg2.errors.InFailedSqlTransaction:
+                self.postgres_connection.rollback()
+                continue
+
 
             uploads = self.postgres_cursor.fetchall()
             for upload in uploads: # tuples --- video_id | video_metadata | signature_metadata | date_creation
@@ -101,7 +106,25 @@ class VideoHandler:
 
         return uploadData
     
+    def internal__removeVideoObject(self, id):
+        sql_query = f"""
+        DELETE FROM public."Videos" WHERE video_id = %s
+        """
+        self.postgres_cursor.execute(sql_query, (id,))
+        self.postgres_connection.commit()
+
+    def internal__retrieveVideoObject(self, id: str):
+        sql_query = f"""
+        SELECT video_id, video_metadata, date_created, date_modified FROM public."Videos" WHERE video_id = %s
+        """
+        self.postgres_cursor.execute(sql_query, (id,))
+        videoData = self.postgres_cursor.fetchone()
+
+        return videoData
+    
     def internal__createVideoObject(self, id: str, video_metadata: dict):
+        if self.internal__retrieveVideoObject(id=id) is not None:
+            return
         video_guid = video_metadata.get("guid")
         fileData = self.bunny.stream_RetrieveVideo(video_guid)
 
@@ -126,8 +149,11 @@ class VideoHandler:
         INSERT INTO public."Videos" (video_id, video_metadata)
         VALUES (%s, %s);
         """
-        self.postgres_cursor.execute(sql_query, (id, videoJson))
-        self.postgres_connection.commit()
+        try:
+            self.postgres_cursor.execute(sql_query, (id, videoJson))
+            self.postgres_connection.commit()
+        except:
+            self.postgres_connection.rollback()
         
     
     def createUploadObject(self, id: str, video_metadata: dict):

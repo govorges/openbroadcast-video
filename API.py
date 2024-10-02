@@ -1,6 +1,7 @@
 from flask import Flask, request, make_response, jsonify
 from os import path
 import json
+import datetime
 
 import cv2
 
@@ -14,6 +15,46 @@ api = Flask(__name__)
 api_VideoHandle = VideoHandler()
 api_Bunny = BunnyAPI()
 
+def BuildHTTPResponse(
+        headers: dict = None,
+        status_code = 200, **kwargs
+    ):
+
+    type = kwargs.get("type")
+    message = kwargs.get("message")
+    message_name = kwargs.get("message_name")
+
+    route = kwargs.get("route")
+    method = kwargs.get("method")
+
+    object_data = kwargs.get("object_data")
+
+
+    resp = make_response()
+    resp.status_code = status_code
+
+    if headers is not None:
+        resp.headers = headers
+    else:
+        resp.headers.set("Content-Type", "application/json")
+        resp.headers.set("Server", "video")
+        resp.headers.set("Date", datetime.datetime.now())
+        
+    data = {
+        "type": type, # Response type
+        "message": message, # Response type message
+        "route": route, # Request route
+        "method": method, # Request method
+        "message_name": message_name, # Response data object name (internal)
+        "object_data": object_data # Response data object
+    }
+
+    resp.set_data(
+        json.dumps(data, indent=4)
+    )
+
+    return resp
+
 def BuildJSONResponseText(type: str, message: str, route: str, method: str):
     data = {
         "type": type,
@@ -25,23 +66,63 @@ def BuildJSONResponseText(type: str, message: str, route: str, method: str):
 
 @api.route("/uploads/create", methods=["POST"])
 def uploads__Create():
+    response_data = {
+        "type": None,
+        "message": None,
+        "route": "/uploads/create",
+        "method": request.method,
+        "object": None
+    }
+    
+    # Start request error handling
+
     id = request.headers.get("id")
     if id is None or id == "":
-        response_text = BuildJSONResponseText("WARNING", "The header \"id\" is not set or was set incorrectly", route="/uploads/create", method="POST")
-        return make_response(response_text, 400)
+        response_data["type"] = "FAIL"
+        response_data["message"] = "The header \"id\" is not set or was set incorrectly"
     
     metadata = request.json
     if metadata is None or metadata == "":
-        response_text = BuildJSONResponseText("WARNING", "The header \"metadata\" is not set or was set incorrectly", route="/uploads/create", method="POST")
-        return make_response(response_text, 400)
+        response_data["type"] = "FAIL"
+        response_data["message"] = "The header \"metadata\" is not set or was set incorrectly"
+    
+    metadata_required_keys = ["title", "description", "category"]
+    metadata_missing_keys = [key for key in metadata_required_keys if metadata.get(key) is None]
+    
+    if len(metadata_missing_keys) > 0:
+        response_data["type"] = "FAIL"
+        response_data["message"] = f"Request metadata did not contain [{metadata_missing_keys}]'."
+        
+        response_data["message_name"] = "metadata_missing_keys"
+        response_data["object_data"] = metadata
 
-    uploadData = api_VideoHandle.createUploadObject(id, metadata)
+    if response_data["type"] is not None:
+        return BuildHTTPResponse(**response_data)
 
+    # Start createUploadObject Error Handling
+    
+    upload_response_data = api_VideoHandle.createUploadObject(id, metadata)
+    
+    upload_response_type = upload_response_data.get("type")
+    if upload_response_type is None:
+        response_data["type"] = "FATAL"
+        response_data["message"] = f"api_VideoHandle.createUploadObject() response `type` was None."
+
+        response_data["message_name"] = "create_upload_object_fatal_TypeNotFound"
+
+        response_data["object_data"] = None
+
+        return BuildHTTPResponse(**response_data, status_code=500)
+
+    if upload_response_type == "FAIL":
+        raise ValueError(upload_response_data)
+        return BuildHTTPResponse(**upload_response_data, status_code=400)
+    
     # Some data is not for external use.
-    uploadData['metadata'].pop('stream_url')
-    uploadData['metadata'].pop('library_id')
+    upload_response_data['object_data']['metadata'].pop('stream_url')
+    upload_response_data['object_data']['metadata'].pop('library_id')
 
-    return jsonify(uploadData)
+    return BuildHTTPResponse(**upload_response_data)
 
 @api.route("/videos/retrieve", methods=["GET"])
 def videos__Retrieve():

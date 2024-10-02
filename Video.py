@@ -157,8 +157,24 @@ class VideoHandler:
         
     
     def createUploadObject(self, id: str, video_metadata: dict):
+        function_return_data = {
+            "type": None,
+            "message": None,
+            "message_name": None,
+
+            "origin": f"createUploadObject()",
+
+            "object_data": None
+        }
+
         if not self.internal_IsValidVideoID(id):
-            return None
+            # Verifies `id` is the correct format.
+            function_return_data["type"] = "FAIL"
+            function_return_data["message"] = "`id` is formatted incorrectly."
+            function_return_data["message_name"] = "invalid_video_id"
+            function_return_data["object_data"] = f"{id}"
+
+            return function_return_data
         
         videoObj = self.bunny.stream_CreateVideo(videoTitle=video_metadata.get("title"))
         self.bunny.stream_UpdateVideo(videoObj.get("guid"), payload = {
@@ -171,6 +187,14 @@ class VideoHandler:
         })
         video_metadata["guid"] = videoObj.get("guid")
 
+        if video_metadata.get("guid") is None:
+            function_return_data["type"] = "FAIL"
+            function_return_data["message"] = "Video GUID was not available. Video was likely not created."
+            function_return_data["message_name"] = "missing_video_guid"
+            function_return_data["object_data"] = None
+
+            return function_return_data
+
         metadata = {
             "title": video_metadata.get("title"),
             "description": video_metadata.get("description"),
@@ -182,22 +206,75 @@ class VideoHandler:
             "stream_url": f"{LIBRARY_CDN_HOSTNAME}/{video_metadata['guid']}/playlist.m3u8",
         }
 
-        tusSignature = self.bunny.upload_CreateSignature(video_metadata['guid'])
-        requiredKeys = ["signature", "signature_expiration_time", "library_id"]
-        
-        for key in requiredKeys:
-            if tusSignature.get(key) is None or tusSignature.get(key) == "":
-                return None
-        
-        sql_query = f"""
-        INSERT INTO public."Uploads" (video_id, video_metadata, signature_metadata)
-        VALUES (%s, %s, %s);
-        """
+        metadata_missing_entries = []
 
+        for key in metadata:
+            if metadata.get(key) is None:
+                metadata_missing_entries.append(key)
+                
+        if len(metadata_missing_entries) > 0:
+            function_return_data["type"] = "FAIL"
+            function_return_data["message"] = f"Created video metadata is missing entries: {metadata_missing_entries}"
+            function_return_data["message_name"] = "video_metadata_missing_entries"
+            function_return_data["object_data"] = metadata
+
+            return function_return_data
+
+
+        signature = self.bunny.upload_CreateSignature(video_metadata['guid'])
+        signature_required_keys = ["signature", "signature_expiration_time", "library_id"]
+        signature_missing_keys = []
+        
+        for key in signature_required_keys:
+            if signature.get(key) is None:
+                signature_missing_keys.append(key)
+        
+        if len(signature_missing_keys) > 0:
+            function_return_data["type"] = "FAIL"
+            function_return_data["message"] = f"Created signature is missing entries: {signature_missing_keys}"
+            function_return_data["message_name"] = "signature_missing_entries"
+            function_return_data["object_data"] = signature
+
+            return function_return_data
+        
         videoJson = json.dumps(metadata)
-        signatureJson = json.dumps(tusSignature)
+        signatureJson = json.dumps(signature)
 
-        self.postgres_cursor.execute(sql_query, (id, videoJson, signatureJson))
-        self.postgres_connection.commit()
+        try:
+            sql_query = f"""
+            INSERT INTO public."Uploads" (video_id, video_metadata, signature_metadata)
+            VALUES (%s, %s, %s);
+            """
+            self.postgres_cursor.execute(sql_query, (id, videoJson, signatureJson))
+            self.postgres_connection.commit()
+        except psycopg2.errors.UniqueViolation:
+            function_return_data["type"] = "WARN"
+            function_return_data["message"] = f"Upload object with id {id} already exists."
+            function_return_data["message_name"] = "duplicate_id"
+            function_return_data["object_data"] = f"{id}"
 
-        return { "signature": tusSignature, "metadata": metadata }
+            return function_return_data
+        except psycopg2.errors.InFailedSqlTransaction:
+            function_return_data["type"] = "FAIL"
+            function_return_data["message"] = f"Transaction with database failed. (1)"
+            function_return_data["message_name"] = "in_failed_sql_transaction"
+            function_return_data["object_data"] = None
+
+            return function_return_data
+        except:
+            function_return_data["type"] = "FAIL"
+            function_return_data["message"] = f"Transaction with database failed. (2)"
+            function_return_data["message_name"] = "database_transaction_failed_miscellaneous"
+            function_return_data["object_data"] = None
+
+            return function_return_data
+
+        function_return_data["type"] = "SUCCESS"
+        function_return_data["message"] = "Upload created successfully."
+        function_return_data["message_name"] = "upload_success"
+        function_return_data["object_data"] = {
+            "signature": signature,
+            "metadata": metadata
+        }
+
+        return function_return_data

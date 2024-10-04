@@ -84,6 +84,8 @@ class VideoHandler:
         return id
     
     def internal_IsValidVideoID(self, id):
+        if len(id) != 12:
+            return False
         seq = "AaBbCcDdEeFfGgHhIiJjKkLlMmNnOoPpQqRrSsTtUuVvWwXxYyZz1234567890"
         for char in id:
             if char not in seq:

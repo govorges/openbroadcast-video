@@ -271,7 +271,7 @@ class VideoHandler:
 
         function_return_data["type"] = "SUCCESS"
         function_return_data["message"] = "Upload created successfully."
-        function_return_data["message_name"] = "upload_success"
+        function_return_data["message_name"] = "upload_creation_success"
         function_return_data["object_data"] = {
             "signature": signature,
             "metadata": metadata

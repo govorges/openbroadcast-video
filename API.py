@@ -42,10 +42,13 @@ def BuildHTTPResponse(
         
     data = {
         "type": type, # Response type
+
         "message": message, # Response type message
+        "message_name": message_name, # Response data object name (internal)
+
         "route": route, # Request route
         "method": method, # Request method
-        "message_name": message_name, # Response data object name (internal)
+        
         "object_data": object_data # Response data object
     }
 
@@ -68,9 +71,13 @@ def BuildJSONResponseText(type: str, message: str, route: str, method: str):
 def uploads__Create():
     response_data = {
         "type": None,
+
         "message": None,
+        "message_name": None,
+
         "route": "/uploads/create",
         "method": request.method,
+
         "object_data": None
     }
     
@@ -79,11 +86,13 @@ def uploads__Create():
     if id is None or id == "":
         response_data["type"] = "FAIL"
         response_data["message"] = "The header \"id\" is not set or was set incorrectly"
+        response_data["message_name"] = "id_missing"
     
     metadata = request.json
     if metadata is None or metadata == "":
         response_data["type"] = "FAIL"
         response_data["message"] = "The header \"metadata\" is not set or was set incorrectly"
+        response_data["message_name"] = "metadata_missing"
     
     metadata_required_keys = ["title", "description", "category"]
     metadata_missing_keys = [key for key in metadata_required_keys if metadata.get(key) is None]
@@ -91,8 +100,8 @@ def uploads__Create():
     if len(metadata_missing_keys) > 0:
         response_data["type"] = "FAIL"
         response_data["message"] = f"Request metadata did not contain [{metadata_missing_keys}]'."
-        
         response_data["message_name"] = "metadata_missing_keys"
+
         response_data["object_data"] = metadata
 
     if response_data["type"] is not None:
@@ -105,7 +114,6 @@ def uploads__Create():
     if upload_response_type is None:
         response_data["type"] = "FATAL"
         response_data["message"] = f"api_VideoHandle.createUploadObject() response `type` was None."
-
         response_data["message_name"] = "create_upload_object_fatal_TypeNotFound"
 
         response_data["object_data"] = None

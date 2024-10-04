@@ -71,11 +71,10 @@ def uploads__Create():
         "message": None,
         "route": "/uploads/create",
         "method": request.method,
-        "object": None
+        "object_data": None
     }
     
     # Start request error handling
-
     id = request.headers.get("id")
     if id is None or id == "":
         response_data["type"] = "FAIL"
@@ -98,8 +97,7 @@ def uploads__Create():
 
     if response_data["type"] is not None:
         return BuildHTTPResponse(**response_data)
-
-    # Start createUploadObject Error Handling
+    # End request error handling
     
     upload_response_data = api_VideoHandle.createUploadObject(id, metadata)
     
@@ -115,7 +113,6 @@ def uploads__Create():
         return BuildHTTPResponse(**response_data, status_code=500)
 
     if upload_response_type == "FAIL":
-        raise ValueError(upload_response_data)
         return BuildHTTPResponse(**upload_response_data, status_code=400)
     
     # Some data is not for external use.

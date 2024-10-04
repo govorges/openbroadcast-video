@@ -89,7 +89,7 @@ def uploads__Create():
         response_data["message_name"] = "id_missing"
     
     metadata = request.json
-    if metadata is None or metadata == "":
+    if metadata is None or len(metadata.keys()) == 0:
         response_data["type"] = "FAIL"
         response_data["message"] = "The header \"metadata\" is not set or was set incorrectly"
         response_data["message_name"] = "metadata_missing"
@@ -97,7 +97,7 @@ def uploads__Create():
     metadata_required_keys = ["title", "description", "category"]
     metadata_missing_keys = [key for key in metadata_required_keys if metadata.get(key) is None]
     
-    if len(metadata_missing_keys) > 0:
+    if len(metadata_missing_keys) > 0 and len(metadata.keys()) != 0:
         response_data["type"] = "FAIL"
         response_data["message"] = f"Request metadata did not contain [{metadata_missing_keys}]'."
         response_data["message_name"] = "metadata_missing_keys"

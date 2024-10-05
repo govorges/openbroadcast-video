@@ -103,8 +103,12 @@ class VideoHandler:
         sql_query = f"""
         SELECT video_id, video_metadata, signature_metadata, date_creation FROM public."Uploads" WHERE video_id = %s
         """
-        self.postgres_cursor.execute(sql_query, (video_id,))
-        uploadData = self.postgres_cursor.fetchone()
+        try:
+            self.postgres_cursor.execute(sql_query, (video_id,))
+            uploadData = self.postgres_cursor.fetchone()
+        except psycopg2.errors.InFailedSqlTransaction:
+            self.postgres_connection.rollback()
+            return None    
 
         return uploadData
     
@@ -240,6 +244,10 @@ class VideoHandler:
             return function_return_data
         
         videoJson = json.dumps(metadata)
+
+        if id == "TestVideoId0": # We use specifically this ID for creating a test video object, and I want the ID to expire very quickly.
+            test_expiry_date = datetime.datetime.now() + datetime.timedelta.seconds(10)
+            signature["signature_expiration_time"] = test_expiry_date.timestamp()
         signatureJson = json.dumps(signature)
 
         try:
@@ -250,7 +258,7 @@ class VideoHandler:
             self.postgres_cursor.execute(sql_query, (id, videoJson, signatureJson))
             self.postgres_connection.commit()
         except psycopg2.errors.UniqueViolation:
-            function_return_data["type"] = "WARN"
+            function_return_data["type"] = "FAIL"
             function_return_data["message"] = f"Upload object with id {id} already exists."
             function_return_data["message_name"] = "duplicate_id"
             function_return_data["object_data"] = f"{id}"

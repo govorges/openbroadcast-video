@@ -105,7 +105,7 @@ def uploads__Create():
         response_data["object_data"] = metadata
 
     if response_data["type"] is not None:
-        return BuildHTTPResponse(**response_data)
+        return BuildHTTPResponse(**response_data, status_code=400)
     # End request error handling
     
     upload_response_data = api_VideoHandle.createUploadObject(id, metadata)
@@ -120,7 +120,7 @@ def uploads__Create():
 
         return BuildHTTPResponse(**response_data, status_code=500)
 
-    if upload_response_type == "FAIL":
+    if upload_response_type != "SUCCESS":
         return BuildHTTPResponse(**upload_response_data, status_code=400)
     
     # Some data is not for external use.
@@ -128,6 +128,91 @@ def uploads__Create():
     upload_response_data['object_data']['metadata'].pop('library_id')
 
     return BuildHTTPResponse(**upload_response_data)
+
+@api.route("/uploads/cancel", methods=["POST"])
+def uploads__Cancel():
+    response_data = {
+        "type": None,
+
+        "message": None,
+        "message_name": None,
+
+        "route": "/uploads/cancel",
+        "method": request.method,
+
+        "object_data": None
+    }
+    
+    # Start request error handling
+    id = request.headers.get("id")
+    if id is None or id == "":
+        response_data["type"] = "FAIL"
+        response_data["message"] = "The header \"id\" is not set or was set incorrectly"
+        response_data["message_name"] = "id_missing"
+    
+    metadata = request.json
+    if metadata is None or len(metadata.keys()) == 0:
+        response_data["type"] = "FAIL"
+        response_data["message"] = "The header \"metadata\" is not set or was set incorrectly"
+        response_data["message_name"] = "metadata_missing"
+    
+    metadata_required_keys = ["title", "description", "category"]
+    metadata_missing_keys = [key for key in metadata_required_keys if metadata.get(key) is None]
+    
+    if len(metadata_missing_keys) > 0 and len(metadata.keys()) != 0:
+        response_data["type"] = "FAIL"
+        response_data["message"] = f"Request metadata did not contain [{metadata_missing_keys}]'."
+        response_data["message_name"] = "metadata_missing_keys"
+
+        response_data["object_data"] = metadata
+
+    # Making sure the upload's video ID is valid.
+
+    if not api_VideoHandle.internal_IsValidVideoID(id):
+        response_data["type"] = "FAIL"
+        response_data["message"] = f"Video id is invalid"
+        response_data["message_name"] = "invalid_video_id"
+
+    # Making sure the upload exists.
+    
+    upload_data = api_VideoHandle.internal__RetrieveUploadObject(video_id=id)
+    
+    if upload_data is None:
+        response_data["type"] = "FAIL"
+        response_data["message"] = f"Upload with id {id} not found."
+        response_data["message_name"] = "upload_not_found"
+    else:
+        # Verifying the upload's metadata for the cancellation.
+        # Not perfectly secure, but inconsequential and guessing the id & metadata
+        video_metadata = upload_data[1]
+        keys_to_check = ["title", "description", "category"]
+
+        metadata_valid = True
+        for key in keys_to_check:
+            if metadata.get(key) != video_metadata.get(key):
+                metadata_valid = False
+        if not metadata_valid:
+            response_data["type"] = "FAIL"
+            response_data["message"] = f"Upload metadata does not match."
+            response_data["message_name"] = "upload_metadata_invalid"
+
+    if response_data["type"] is not None:
+        return BuildHTTPResponse(**response_data, status_code=400)
+    
+    # Remove upload.
+    api_VideoHandle.internal__RemoveUploadObject(id)
+
+    # Verify upload was removed.
+    if api_VideoHandle.internal__RetrieveUploadObject(id) is not None:
+        response_data["type"] = "FAIL"
+        response_data["message"] = f"Upload found but not successfully cancelled."
+        response_data["message_name"] = "upload_not_cancelled"
+    else:
+        response_data["type"] = "SUCCESS"
+        response_data["message"] = f"Upload with id {id} cancelled successfully."
+        response_data["message_name"] = "upload_cancelled_successfully"
+    return BuildHTTPResponse(**response_data)
+
 
 @api.route("/videos/retrieve", methods=["GET"])
 def videos__Retrieve():

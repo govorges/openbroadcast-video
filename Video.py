@@ -167,10 +167,7 @@ class VideoHandler:
             "type": None,
             "message": None,
             "message_name": None,
-
-            "origin": f"createUploadObject()",
-
-            "object_data": None
+            "object": None
         }
 
         if not self.internal_IsValidVideoID(id):
@@ -178,7 +175,7 @@ class VideoHandler:
             function_return_data["type"] = "FAIL"
             function_return_data["message"] = "`id` is formatted incorrectly."
             function_return_data["message_name"] = "invalid_video_id"
-            function_return_data["object_data"] = f"{id}"
+            function_return_data["object"] = f"{id}"
 
             return function_return_data
         
@@ -197,7 +194,7 @@ class VideoHandler:
             function_return_data["type"] = "FAIL"
             function_return_data["message"] = "Video GUID was not available. Video was likely not created."
             function_return_data["message_name"] = "missing_video_guid"
-            function_return_data["object_data"] = None
+            function_return_data["object"] = None
 
             return function_return_data
 
@@ -222,7 +219,7 @@ class VideoHandler:
             function_return_data["type"] = "FAIL"
             function_return_data["message"] = f"Created video metadata is missing entries: {metadata_missing_entries}"
             function_return_data["message_name"] = "video_metadata_missing_entries"
-            function_return_data["object_data"] = metadata
+            function_return_data["object"] = metadata
 
             return function_return_data
 
@@ -239,7 +236,7 @@ class VideoHandler:
             function_return_data["type"] = "FAIL"
             function_return_data["message"] = f"Created signature is missing entries: {signature_missing_keys}"
             function_return_data["message_name"] = "signature_missing_entries"
-            function_return_data["object_data"] = signature
+            function_return_data["object"] = signature
 
             return function_return_data
         
@@ -261,28 +258,28 @@ class VideoHandler:
             function_return_data["type"] = "FAIL"
             function_return_data["message"] = f"Upload object with id {id} already exists."
             function_return_data["message_name"] = "duplicate_id"
-            function_return_data["object_data"] = f"{id}"
+            function_return_data["object"] = f"{id}"
 
             return function_return_data
         except psycopg2.errors.InFailedSqlTransaction:
             function_return_data["type"] = "FAIL"
             function_return_data["message"] = f"Transaction with database failed. (1)"
             function_return_data["message_name"] = "in_failed_sql_transaction"
-            function_return_data["object_data"] = None
+            function_return_data["object"] = None
 
             return function_return_data
         except:
             function_return_data["type"] = "FAIL"
             function_return_data["message"] = f"Transaction with database failed. (2)"
             function_return_data["message_name"] = "database_transaction_failed_miscellaneous"
-            function_return_data["object_data"] = None
+            function_return_data["object"] = None
 
             return function_return_data
 
         function_return_data["type"] = "SUCCESS"
         function_return_data["message"] = "Upload created successfully."
         function_return_data["message_name"] = "upload_creation_success"
-        function_return_data["object_data"] = {
+        function_return_data["object"] = {
             "signature": signature,
             "metadata": metadata
         }

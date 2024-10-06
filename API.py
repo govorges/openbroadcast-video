@@ -124,8 +124,8 @@ def uploads__Create():
         return BuildHTTPResponse(**upload_response_data, status_code=400)
     
     # Some data is not for external use.
-    upload_response_data['object_data']['metadata'].pop('stream_url')
-    upload_response_data['object_data']['metadata'].pop('library_id')
+    upload_response_data['object']['metadata'].pop('stream_url')
+    upload_response_data['object']['metadata'].pop('library_id')
 
     return BuildHTTPResponse(**upload_response_data)
 

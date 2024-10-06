@@ -4,22 +4,23 @@ from os import environ
 class BunnyAPI:
     def __init__(self):
         self.API_Endpoint_URL = environ["BUNNY_ENDPOINT_ADDRESS"]
-    def file_QueueUpload(self, target_file_path: str, local_file_path: str):
+    def file_Upload(self, target_file_path: str, local_file_path: str):
         headers = {
             "target-file-path": target_file_path,
             "local-file-path": local_file_path
         }
         request = requests.post(f"http://{self.API_Endpoint_URL}/files/upload", headers=headers)
 
-        return request.status_code
+        return request.json()
     
     def file_List(self, path: str):
         headers = {
             "path": path
         }
         request = requests.get(f"http://{self.API_Endpoint_URL}/files/list", headers=headers)
+        requestJson = request.json()
 
-        return request.json()
+        return requestJson.get("object")
     
     def file_Delete(self, target_file_path: str):
         headers = {
@@ -50,17 +51,18 @@ class BunnyAPI:
             "videoID": videoID
         }
         request = requests.get(f"http://{self.API_Endpoint_URL}/stream/create-signature", headers=headers)
+        requestJson = request.json()
 
-        signatureData = request.json()
-        return signatureData
+        return requestJson.get("object")
         
     def stream_CreateVideo(self, videoTitle: str):
         headers = {
             "title": videoTitle
         }
         request = requests.get(f"http://{self.API_Endpoint_URL}/stream/create-video", headers=headers)
+        requestJson = request.json()
 
-        return request.json()
+        return requestJson.get("object")
     
     def stream_UpdateVideo(self, guid: str, payload: dict):
         headers = {
@@ -75,5 +77,6 @@ class BunnyAPI:
             "guid": guid
         }
         request = requests.get(f"http://{self.API_Endpoint_URL}/stream/retrieve-video", headers=headers)
+        requestJson = request.json()
 
-        return request.json()
+        return requestJson.get("object")

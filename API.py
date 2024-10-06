@@ -27,7 +27,7 @@ def BuildHTTPResponse(
     route = kwargs.get("route")
     method = kwargs.get("method")
 
-    object_data = kwargs.get("object_data")
+    object = kwargs.get("object")
 
 
     resp = make_response()
@@ -49,7 +49,7 @@ def BuildHTTPResponse(
         "route": route, # Request route
         "method": method, # Request method
         
-        "object_data": object_data # Response data object
+        "object": object # Response data object
     }
 
     resp.set_data(
@@ -78,7 +78,7 @@ def uploads__Create():
         "route": "/uploads/create",
         "method": request.method,
 
-        "object_data": None
+        "object": None
     }
     
     # Start request error handling
@@ -102,7 +102,7 @@ def uploads__Create():
         response_data["message"] = f"Request metadata did not contain [{metadata_missing_keys}]'."
         response_data["message_name"] = "metadata_missing_keys"
 
-        response_data["object_data"] = metadata
+        response_data["object"] = metadata
 
     if response_data["type"] is not None:
         return BuildHTTPResponse(**response_data, status_code=400)
@@ -116,7 +116,7 @@ def uploads__Create():
         response_data["message"] = f"api_VideoHandle.createUploadObject() response `type` was None."
         response_data["message_name"] = "create_upload_object_fatal_TypeNotFound"
 
-        response_data["object_data"] = None
+        response_data["object"] = None
 
         return BuildHTTPResponse(**response_data, status_code=500)
 
@@ -140,7 +140,7 @@ def uploads__Cancel():
         "route": "/uploads/cancel",
         "method": request.method,
 
-        "object_data": None
+        "object": None
     }
     
     # Start request error handling
@@ -164,7 +164,7 @@ def uploads__Cancel():
         response_data["message"] = f"Request metadata did not contain [{metadata_missing_keys}]'."
         response_data["message_name"] = "metadata_missing_keys"
 
-        response_data["object_data"] = metadata
+        response_data["object"] = metadata
 
     # Making sure the upload's video ID is valid.
 
@@ -247,11 +247,9 @@ def videos__ThumbnailUpload():
     resized = cv2.resize(thumbnail_image, target_image_resolution)
     cv2.imwrite(local_file_path, resized)
 
-    status_code = api_VideoHandle.bunny.file_QueueUpload(target_file_path=target_file_path, local_file_path=local_file_path)
+    upload_request = api_VideoHandle.bunny.file_Upload(target_file_path=target_file_path, local_file_path=local_file_path)
 
-    if status_code == 200:
-        return make_response("Success", 200)
-    return make_response("Fail", status_code)
+    return BuildHTTPResponse(**upload_request)
 
 @api.route("/videos/ingest", methods=["POST"])
 def videos__Ingest():

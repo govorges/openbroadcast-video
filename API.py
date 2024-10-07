@@ -213,16 +213,36 @@ def uploads__Cancel():
         response_data["message_name"] = "upload_cancelled_successfully"
     return BuildHTTPResponse(**response_data)
 
-
 @api.route("/videos/retrieve", methods=["GET"])
 def videos__Retrieve():
+    response_data = {
+        "type": None,
+
+        "message": None,
+        "message_name": None,
+
+        "route": "/videos/retrieve",
+        "method": request.method,
+
+        "object": None
+    }
+
     guid = request.headers.get("guid")
     if guid is None or guid == "":
-        response_text = BuildJSONResponseText("WARNING", "The header \"id\" is not set or was set incorrectly", route="/uploads/capture", method="POST")
-        return make_response(response_text, 400)
+        response_data["type"] = "FAIL"
+        response_data["message"] = "The header \"guid\" is not set or was set incorrectly"
+        response_data["message_name"] = "video_guid_missing"
+
+        return BuildHTTPResponse(**response_data)
     
-    video = api_Bunny.stream_RetrieveVideo(guid=guid)
-    return jsonify(video) # !!! Powerful !!!
+    response = api_Bunny.stream_RetrieveVideo(guid=guid)
+    for key in response.keys():
+        response_data[key] = response[key]
+
+    if response.get("object") is None:
+        return BuildHTTPResponse(**response_data)
+    
+    return jsonify(response_data["object"])
 
 @api.route("/videos/thumbnail-upload", methods=["POST"])
 def videos__ThumbnailUpload():

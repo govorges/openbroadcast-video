@@ -79,4 +79,4 @@ class BunnyAPI:
         request = requests.get(f"http://{self.API_Endpoint_URL}/stream/retrieve-video", headers=headers)
         requestJson = request.json()
 
-        return requestJson.get("object")
+        return requestJson

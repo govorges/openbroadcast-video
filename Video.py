@@ -18,13 +18,19 @@ LIBRARY_CDN_HOSTNAME = environ["LIBRARY_CDN_HOSTNAME"]
 class VideoHandler:
     def __init__(self):
         self.bunny = BunnyAPI()       
-        self.postgres_connection = psycopg2.connect(
-            database=environ["POSTGRESDB_DATABASE"],
-            host=environ["POSTGRESDB_HOST"],
-            user=environ["POSTGRESDB_USER"],
-            password=environ["POSTGRES_PASSWORD"],
-            port=environ["POSTGRESDB_DOCKER_PORT"]
-        )
+        
+        self.postgres_connection = None
+        while self.postgres_connection is None:
+            try:
+                self.postgres_connection = psycopg2.connect(
+                    database=environ["POSTGRESDB_DATABASE"],
+                    host=environ["POSTGRESDB_HOST"],
+                    user=environ["POSTGRESDB_USER"],
+                    password=environ["POSTGRES_PASSWORD"],
+                    port=environ["POSTGRESDB_DOCKER_PORT"]
+                )
+            except Exception as e:
+                time.sleep(10)
         self.postgres_cursor = self.postgres_connection.cursor()
 
         self.UPLOAD_FOLDER = path.join(HOME_DIR, "uploads")
@@ -50,7 +56,7 @@ class VideoHandler:
                 video_metadata = upload[1]
                 signature_metadata = upload[2]
 
-                video = self.bunny.stream_RetrieveVideo(video_metadata.get("guid"))
+                video = self.bunny.stream_RetrieveVideo(video_metadata.get("guid")).get('object')
                 statusCode = video.get("status")
 
                 if statusCode in [0, 1, 2, 3] or statusCode in ["0", "1", "2", "3"]:

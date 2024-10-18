@@ -45,8 +45,13 @@ class VideoHandler:
         local_videos = self.internal__listVideoObjects()
         local_guids = [x[1].get("guid") for x in local_videos]
 
-        for guid in stream_library_guids:
-            if guid not in local_guids:
+        for video in stream_library_videos['items']:
+            guid = video.get("guid")
+            status = video.get("status")
+
+            if status == 4 and guid not in local_guids:
+                self.bunny.stream_DeleteVideo(guid=guid)
+            elif status in [5, 6]:
                 self.bunny.stream_DeleteVideo(guid=guid)
         
         for video in local_videos:

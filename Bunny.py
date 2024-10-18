@@ -80,3 +80,21 @@ class BunnyAPI:
         requestJson = request.json()
 
         return requestJson
+
+    def stream_ListVideos(self, libraryId: str = None):
+        headers = {
+            "libraryId": libraryId
+        }
+        request = requests.get(f"http://{self.API_Endpoint_URL}/stream/videos", headers=headers)
+        requestJson = request.json()
+
+        return requestJson.get("object")
+    
+    def stream_DeleteVideo(self, guid: str):
+        headers = {
+            "guid": guid
+        }
+        request = requests.post(f"http://{self.API_Endpoint_URL}/stream/delete-video", headers=headers)
+        requestJson = request.json()
+
+        return requestJson

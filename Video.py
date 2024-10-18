@@ -38,9 +38,28 @@ class VideoHandler:
         self.pollerThread = Thread(target=self.internal__pollUploadProgress, args=(), daemon=True)
         self.pollerThread.start()
 
+    def internal__cleanupStreamLibrary(self):
+        stream_library_videos = self.bunny.stream_ListVideos()
+        stream_library_guids = [x.get('guid') for x in stream_library_videos['items']]
+        
+        local_videos = self.internal__listVideoObjects()
+        local_guids = [x[1].get("guid") for x in local_videos]
+
+        for guid in stream_library_guids:
+            if guid not in local_guids:
+                self.bunny.stream_DeleteVideo(guid=guid)
+        
+        for video in local_videos:
+            videoId = video[0]
+            videoGuid = video[1].get("guid")
+            if videoGuid not in stream_library_guids:
+                self.internal__removeVideoObject(id=videoId)
+
+
     def internal__pollUploadProgress(self):
         while True: 
             time.sleep(10)
+            self.internal__cleanupStreamLibrary()
 
             sql_query = '''SELECT * FROM public."Uploads" ORDER BY date_creation ASC''' # earliest first
             try:
@@ -134,11 +153,21 @@ class VideoHandler:
 
         return videoData
     
+    def internal__listVideoObjects(self):
+        sql_query = f"""
+        SELECT * FROM public."Videos"
+        ORDER BY video_id ASC
+        """
+        self.postgres_cursor.execute(sql_query)
+        videos = self.postgres_cursor.fetchall()
+        
+        return videos
+    
     def internal__createVideoObject(self, id: str, video_metadata: dict):
         if self.internal__retrieveVideoObject(id=id) is not None:
             return
         video_guid = video_metadata.get("guid")
-        fileData = self.bunny.stream_RetrieveVideo(video_guid)
+        fileData = self.bunny.stream_RetrieveVideo(video_guid).get('object')
 
         metadata = video_metadata
         metadata["feedTags"] = {
@@ -191,6 +220,14 @@ class VideoHandler:
                 {
                     "property": "description",
                     "value": video_metadata.get("description", "A video uploaded to OpenBroadcast.")
+                },
+                {
+                    "property": "video_id",
+                    "value": id
+                },
+                {
+                    "property": "video_metadata",
+                    "value": video_metadata
                 }
             ]
         })

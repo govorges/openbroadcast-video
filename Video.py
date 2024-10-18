@@ -82,6 +82,7 @@ class VideoHandler:
                 video = self.bunny.stream_RetrieveVideo(video_metadata.get("guid")).get('object')
                 if video is None: # Video was never created in library or somehow deleted. Delete this upload and pretend it never happened.
                     self.internal__RemoveUploadObject(video_id=video_id)
+                    continue
                 statusCode = video.get("status")
 
                 if statusCode in [0, 1, 2, 3] or statusCode in ["0", "1", "2", "3"]:

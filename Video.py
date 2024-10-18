@@ -59,7 +59,6 @@ class VideoHandler:
     def internal__pollUploadProgress(self):
         while True: 
             time.sleep(10)
-            self.internal__cleanupStreamLibrary()
 
             sql_query = '''SELECT * FROM public."Uploads" ORDER BY date_creation ASC''' # earliest first
             try:
@@ -86,7 +85,8 @@ class VideoHandler:
                     self.internal__createVideoObject(id=video_id, video_metadata=video_metadata)
                 else:
                     self.internal__RemoveUploadObject(video_id=video_id)
-        
+
+            self.internal__cleanupStreamLibrary()
 
     def internal__videoIDAlreadyExists(self, id: str):
         fileList = self.bunny.file_List("videos/")

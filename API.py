@@ -264,8 +264,13 @@ def videos__ThumbnailUpload():
 
     # Resizing the thumbnail to the required size for our channel by default, but can be optionally specified
     thumbnail_image = cv2.imread(local_file_path)
-    resized = cv2.resize(thumbnail_image, target_image_resolution)
-    cv2.imwrite(local_file_path, resized)
+    try:
+        resized = cv2.resize(thumbnail_image, target_image_resolution)
+        cv2.imwrite(local_file_path, resized)
+    except cv2.error: # and then if this doesn't exist you've got yourself a good ole fashioned error.
+        thumbnail_image = cv2.imread(path.join(UPLOAD_DIR, "THUMBNAIL_DEFAULT.png"))
+        resized = cv2.resize(thumbnail_image, target_image_resolution)
+        cv2.imwrite(local_file_path, resized)
 
     upload_request = api_VideoHandle.bunny.file_Upload(target_file_path=target_file_path, local_file_path=local_file_path)
 

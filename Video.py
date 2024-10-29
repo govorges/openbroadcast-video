@@ -193,8 +193,8 @@ class VideoHandler:
     def utility_does_video_id_exist(self, video_id: str) -> bool:
         '''Checks if a video with video_id already exists in Public."Videos"'''
         if self.video_retrieve_by_id(video_id=video_id) is not None:
-            return False
-        return True
+            return True
+        return False
 
 
 

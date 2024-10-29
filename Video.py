@@ -208,17 +208,6 @@ class VideoHandler:
             )
             return function_response
         
-        metadata = {
-            "title": video_metadata.get("title"),
-            "description": video_metadata.get("description", "A video uploaded to OpenBroadcast."),
-            "category": video_metadata.get("category"),
-            "guid": video_metadata['guid'],
-            "library_id": environ["BUNNY_STREAMLIBRARY_ID"],
-            "id": id,
-            "thumbnail_url": f"{PULL_ZONE_ROOT}/thumbnails/{id}.png",
-            "stream_url": f"{LIBRARY_CDN_HOSTNAME}/{video_metadata['guid']}/playlist.m3u8",
-        }
-
         remote_video_object = self.bunny.stream_CreateVideo(
             videoTitle = video_metadata["title"]
         )
@@ -226,7 +215,7 @@ class VideoHandler:
             "metaTags": [
                 {
                     "property": "description",
-                    "value": metadata["description"]
+                    "value": video_metadata.get("description", "A video uploaded to OpenBroadcast.")
                 },
                 {
                     "property": "video_id",
@@ -239,6 +228,16 @@ class VideoHandler:
             ]
         })
         video_metadata["guid"] = remote_video_object["guid"]
+        metadata = {
+            "title": video_metadata.get("title"),
+            "description": video_metadata.get("description", "A video uploaded to OpenBroadcast."),
+            "category": video_metadata.get("category"),
+            "guid": video_metadata['guid'],
+            "library_id": environ["BUNNY_STREAMLIBRARY_ID"],
+            "id": id,
+            "thumbnail_url": f"{PULL_ZONE_ROOT}/thumbnails/{id}.png",
+            "stream_url": f"{LIBRARY_CDN_HOSTNAME}/{video_metadata['guid']}/playlist.m3u8",
+        }
 
         # Generating a TUS signature hash for the upload.
         #       Requires information unavailable on this service.

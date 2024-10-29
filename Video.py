@@ -220,10 +220,6 @@ class VideoHandler:
                 {
                     "property": "video_id",
                     "value": id
-                },
-                {
-                    "property": "video_metadata",
-                    "value": video_metadata
                 }
             ]
         })

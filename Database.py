@@ -5,12 +5,8 @@ import psycopg2
 from threading import Thread
 
 
-SERVICE_DIR = path.dirname(path.realpath(__file__))
-HOME_DIR = SERVICE_DIR.rsplit(path.sep, 1)[0]
+HOME_DIR = path.dirname(path.realpath(__file__))
 
-
-PULL_ZONE_ROOT = environ["BUNNY_PULL_ZONE_ROOT"]
-LIBRARY_CDN_HOSTNAME = environ["LIBRARY_CDN_HOSTNAME"]
 
 class Database:
     def __init__(self) -> None:
